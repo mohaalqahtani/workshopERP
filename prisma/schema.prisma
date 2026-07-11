@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+enum Role{
+  ADMIN // المدير
+  RECEPTIONIST // الاستقبال
+  TECHNICIAN // الفنيين
+}
+enum Job_Cards_Status{
+  Registered // تم تسجيلها
+  In_Inspection // يتم الفحص
+  In_Progress // يتم العمل عليها
+  Ready // جاهزة للاستلام
+  Paid // تم الدفع
+  Closed // انتهى العمل عليها
+}
+enum CustomerRank{
+  Bronze
+  Silver
+  Gold
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  role Role @default(TECHNICIAN)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+
+  job_cards Job_Cards[]
+  logs System_Logs[]
+  photos Inspection_Photos[]
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Customers{
+  id Int @id @default(autoincrement())
+  name String
+  phone String @unique
+  email String
+  rank CustomerRank @default(Bronze)
+  createdAt DateTime @default(now())
+
+  vehicles Vehicles[]
+}
+
+model Vehicles{
+  id Int @id @default(autoincrement())
+  brand String
+  model String
+  year_created Int
+  plate_number String @unique
+
+  customerId Int
+  customer Customers @relation(fields: [customerId], references: [id])
+
+  job_cards Job_Cards[]
+}
+
+model Parts_Inventory{
+  id Int @id @default(autoincrement())
+  name String
+  stock_qty Int
+  base_price Decimal
+  compatible_cars String[]
+  image_url String
+
+  job_card_parts Job_Card_Parts[]
+}
+
+model Services_List{
+  id Int @id @default(autoincrement())
+  name String
+  description String
+  required_mechanics Int
+  price Decimal
+
+  jobcardservices Job_Card_Services[]
+}
+
+model System_Logs{
+  id Int @id @default(autoincrement())
+  action String
+  createdAt DateTime @default(now())
+
+  user_id String
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Job_Cards{
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  status Job_Cards_Status @default(Registered)
+  total_price Decimal @default(0.0)
+  isDeleted Boolean @default(false)
+
+  technician_id String
+  technician User @relation(fields: [technician_id], references: [id])
+  vehicle_id Int
+  vehicles Vehicles @relation(fields: [vehicle_id], references: [id])
+
+  jobcardsparts Job_Card_Parts[]
+  jobcardservices Job_Card_Services[]
+  inspectionphotos Inspection_Photos[]
+}
+
+model Job_Card_Parts{
+  id Int @id @default(autoincrement())
+  job_card_id Int
+  jobCardId Job_Cards @relation(fields: [job_card_id], references: [id])
+
+  part_id Int
+  partId Parts_Inventory @relation(fields: [part_id], references: [id])
+
+  quantity Int
+  sold_price Decimal
+}
+
+model Job_Card_Services{
+  id Int @id @default(autoincrement())
+
+  job_card_id Int
+  jobCardId Job_Cards @relation(fields: [job_card_id], references: [id])
+
+  service_id Int
+  serviceId Services_List @relation(fields: [service_id], references: [id])
+
+}
+
+model Inspection_Photos{
+  id Int @id @default(autoincrement())
+
+  job_card_id Int
+  jobCardId Job_Cards @relation(fields: [job_card_id], references: [id])
+
+  photo_Url String
+
+  uploaded_by String
+  user User @relation(fields: [uploaded_by], references: [id])
+
+  createdAt DateTime @default(now())
+}

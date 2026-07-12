@@ -2,12 +2,38 @@
 "use client"
 
 import { useState } from "react"
-import { createCustomerWithVehicle } from "./actions"
+import { createCustomerWithVehicle, searchCustomer } from "./actions"
 
 export default function ReceptionPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+ const [searchQuery, setSearchQuery]     = useState("")
+  const [searchResult, setSearchResult]   = useState<any>(null)
+  const [isSearching, setIsSearching]     = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
 
+    async function handleSearch(value: string) {
+    setSearchQuery(value)
+    setSelectedCustomer(null) // إلغاء الاختيار عند البحث من جديد
+
+    if (value.length < 2) {
+      setSearchResult(null)
+      return
+    }
+
+    setIsSearching(true)
+    const result = await searchCustomer(value)
+    setSearchResult(result)
+    setIsSearching(false)
+  }
+
+  // لما يختار زبون موجود
+  function selectExistingCustomer(customer: any) {
+    setSelectedCustomer(customer)
+    setSearchResult(null)
+    setSearchQuery(customer.phone)
+  }
+  
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
@@ -40,6 +66,65 @@ export default function ReceptionPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6" dir="rtl">
+
+        <div className="relative">
+        <label className="text-sm font-medium block mb-1">
+          البحث عن زبون موجود (جوال أو لوحة)
+        </label>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          //         ↑
+          // كل ضغطة حرف تستدعي handleSearch
+          placeholder="05xxxxxxxx أو رقم اللوحة"
+          className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        {/* نتيجة البحث */}
+        {isSearching && (
+          <p className="text-sm text-gray-400 mt-1">جاري البحث...</p>
+        )}
+
+        {searchResult && (
+          <div className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1">
+            {/* لقى زبون */}
+            <button
+              type="button"
+              onClick={() => selectExistingCustomer(searchResult)}
+              className="w-full p-3 text-right hover:bg-gray-50 flex justify-between items-center"
+            >
+              <div>
+                <p className="font-medium">{searchResult.name}</p>
+                <p className="text-sm text-gray-500">{searchResult.phone}</p>
+                <p className="text-xs text-gray-400">
+                  {searchResult.vehicles.length} مركبة مسجلة
+                </p>
+              </div>
+              <span className="text-blue-500 text-sm">اختيار ←</span>
+            </button>
+          </div>
+        )}
+
+        {/* ما لقى شيء */}
+        {!isSearching && searchQuery.length >= 2 && searchResult === null && (
+          <p className="text-sm text-orange-500 mt-1">
+            لا يوجد زبون بهذه البيانات — سيتم إنشاء حساب جديد
+          </p>
+        )}
+      </div>
+
+      {/* لو اختار زبون موجود — عرض بياناته */}
+      {selectedCustomer && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="font-medium text-blue-700">✅ زبون موجود — {selectedCustomer.name}</p>
+          <p className="text-sm text-blue-600">{selectedCustomer.phone}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            مركباته: {selectedCustomer.vehicles.map((v: any) => v.plate_number).join("، ")}
+          </p>
+        </div>
+      )}
+      
       <div className="border-b pb-4">
         <h1 className="text-2xl font-bold text-gray-800">استقبال مركبة جديدة</h1>
         <p className="text-sm text-gray-500 mt-1">تسجيل بيانات العميل وسيارته في النظام دفعة واحدة.</p>

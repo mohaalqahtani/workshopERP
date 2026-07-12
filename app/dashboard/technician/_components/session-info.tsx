@@ -22,13 +22,14 @@ export default function SessionInfo() {
   }
 
   return (
-    <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
-      <p>الاسم: {session.user.name}</p>
-      <p>الإيميل: {session.user.email}</p>
-      <p>المعرّف: {session.user.id}</p>
-      <pre className="p-2 bg-black text-green-400 rounded text-xs overflow-auto">
-        {JSON.stringify(session.user, null, 2)}
-      </pre>
+    <div className="mt-4 p-4 bg-muted rounded-lg space-y-2 text-right">
+      <p>مرحبا: {session.user.name}</p>
+      <p>لديك المركبات التالية :</p>
     </div>
   )
 }
+{/* <p>الإيميل: {session.user.email}</p>
+<p>المعرّف: {session.user.id}</p>
+<pre className="p-2 bg-black text-green-400 rounded text-xs overflow-auto">
+  {JSON.stringify(session.user, null, 2)}
+</pre> */}

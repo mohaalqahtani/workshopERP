@@ -7,7 +7,10 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import StatusButton from "../../_components/status-button"
-import AddpartsID from "../[id]/addParts/page"
+import AddpartsID from "../../_components/AddPartsDialog"
+import AddServIDDialog from "../../_components/AddServID"
+import DeleteServiceButton from "../../_components/DeleteServices"
+
 type Props = {
   params: Promise<{ id: string }>
   // ↑ Next.js يمرر الـ id من الـ URL هنا
@@ -18,8 +21,9 @@ export default async function JobCardDetailPage({ params }: Props) {
   const session = await auth.api.getSession({ headers: await headers() })
 
   // جيب البطاقة بكل تفاصيلها
-  const jobCard = await prisma.Job_Cards.findUnique({
-    where: {
+  const [jobCard, availableParts, availableServices] = await Promise.all([
+  prisma.Job_Cards.findUnique({  
+  where: {
       id: parseInt(id),
       technician_id: session?.user.id,
       // ↑ أمان إضافي: لو حاول فني يفتح بطاقة مش له
@@ -38,11 +42,30 @@ export default async function JobCardDetailPage({ params }: Props) {
       },
       inspectionphotos: true
     }
+  }),
+
+  prisma.parts_Inventory.findMany({
+    select:{
+        id: true,
+        name: true,
+        base_price: true,
+        stock_qty: true,
+    }
+  }),
+
+  prisma.services_List.findMany({
+    select:{
+      id: true,
+      name: true,
+      description: true,
+      required_mechanics: true,
+      price: true
+    }
   })
 
+])
   // لو ما لقى البطاقة أو مش له → صفحة 404
   if (!jobCard) return notFound()
-
   return (
     <div className="p-6 space-y-6" dir="rtl">
 
@@ -67,17 +90,23 @@ export default async function JobCardDetailPage({ params }: Props) {
         {jobCard.jobcardsparts.length === 0 ? (
           <p className="text-muted-foreground text-sm">لم تُضف قطع بعد</p>
         ) : (
-          <ul className="space-y-1">
-            {jobCard.jobcardsparts.map((part) => (
-              <li key={part.id} className="text-sm flex justify-between">
-                <span>{part.partId.name} × {part.quantity}</span>
-                <span>{part.sold_price.toString()} ر.س</span>
-              </li>
+            <table className="space-y-1 border-collapse border border-gray-400">
+            <tr>
+                <th className="border border-gray-300">اسم القطعة</th>
+                <th className="border border-gray-300">سعر القطعة</th>
+                <th className="border border-gray-300">الاجمالي</th>
+            </tr>
+            {jobCard.jobcardsparts.map((part) => (      
+            <tbody key={part.id} >
+                <td className="border border-gray-300">{part.partId.name} × {part.quantity}</td>
+                <td className="border border-gray-300">{part.sold_price.toString()} ر.س</td>
+                <td className="border border-gray-300">{Number(part.sold_price) * part.quantity} ر.س</td>
+            </tbody>
             ))}
-          </ul>
+          </table>
         )}
         {/* هنا ستضيف لاحقاً: <AddPartForm jobCardId={jobCard.id} /> */}
-    <AddpartsID/>
+    <AddpartsID jobCardId={jobCard.id} availableParts={availableParts}/>
       </section>
 
       {/* ── الخدمات ── */}
@@ -91,11 +120,13 @@ export default async function JobCardDetailPage({ params }: Props) {
               <li key={service.id} className="text-sm flex justify-between">
                 <span>{service.serviceId.name}</span>
                 <span>{service.serviceId.price.toString()} ر.س</span>
+                <DeleteServiceButton job_card_id={jobCard.id} service_id={service.id}/>
               </li>
             ))}
           </ul>
         )}
         {/* هنا ستضيف لاحقاً: <AddServiceForm jobCardId={jobCard.id} /> */}
+        <AddServIDDialog jobCardId={jobCard.id} availableServices={availableServices}/>
       </section>
 
       {/* ── صور الفحص ── */}

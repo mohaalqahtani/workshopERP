@@ -1,8 +1,9 @@
 // app/dashboard/reception/page.tsx
 "use client"
 
-import { useState } from "react"
-import { createCustomerWithVehicle, searchCustomer } from "./actions"
+import { useState, useEffect, useRef } from "react"
+import { createCustomerWithVehicle, searchCustomer, createJobCardForExistingVehicle } from "./actions"
+import StatusButton from "../technician/_components/status-button"
 
 export default function ReceptionPage() {
   const [loading, setLoading] = useState(false)
@@ -11,6 +12,7 @@ export default function ReceptionPage() {
   const [searchResult, setSearchResult]   = useState<any>(null)
   const [isSearching, setIsSearching]     = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null)
 
     async function handleSearch(value: string) {
     setSearchQuery(value)
@@ -30,6 +32,7 @@ export default function ReceptionPage() {
   // لما يختار زبون موجود
   function selectExistingCustomer(customer: any) {
     setSelectedCustomer(customer)
+    setSelectedVehicle(null)
     setSearchResult(null)
     setSearchQuery(customer.phone)
   }
@@ -62,7 +65,28 @@ export default function ReceptionPage() {
     } else {
       setMessage({ type: "error", text: response.error || "حدث خطأ ما" })
     }
+
   }
+
+async function handleSelectVehicle(vehicle: any) {
+  setSelectedVehicle(vehicle)
+  setLoading(true)
+
+  const response = await createJobCardForExistingVehicle(vehicle.id)
+  setLoading(false)
+
+  if (response.success) {
+    // setPrintData({
+    //   jobCardId:    response.data?.jobCard.id,
+    //   cusName:      selectedCustomer.name,
+    //   vehModel:     vehicle.model,
+    //   invNumber:    vehicle.plate_number,
+    // })
+    setMessage({ type: "success", text: "تم فتح بطاقة عمل بنجاح!" })
+  } else {
+    setMessage({ type: "error", text: response.error || "حدث خطأ" })
+  }
+}
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6" dir="rtl">
@@ -107,24 +131,67 @@ export default function ReceptionPage() {
         )}
 
         {/* ما لقى شيء */}
-        {!isSearching && searchQuery.length >= 2 && searchResult === null && (
+        {!isSearching && searchQuery.length >= 2 && searchResult === null && !selectedCustomer && (
           <p className="text-sm text-orange-500 mt-1">
             لا يوجد زبون بهذه البيانات — سيتم إنشاء حساب جديد
           </p>
         )}
       </div>
 
-      {/* لو اختار زبون موجود — عرض بياناته */}
       {selectedCustomer && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="font-medium text-blue-700">✅ زبون موجود — {selectedCustomer.name}</p>
-          <p className="text-sm text-blue-600">{selectedCustomer.phone}</p>
-          <p className="text-sm text-gray-500 mt-1">
-            مركباته: {selectedCustomer.vehicles.map((v: any) => v.plate_number).join("، ")}
+  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+
+    {/* بيانات الزبون */}
+    <p className="font-medium text-blue-700">
+      ✅ {selectedCustomer.name}
+    </p>
+    <p className="text-sm text-blue-600">{selectedCustomer.phone}</p>
+
+    {/* مركباته */}
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-600">
+        اختر المركبة لفتح بطاقة عمل:
+      </p>
+
+      {selectedCustomer.vehicles.map((v: any) => (
+        <button
+          key={v.id}
+          type="button"
+          onClick={() => handleSelectVehicle(v)}
+          disabled={loading}
+          className={`w-full p-3 rounded-lg border text-right transition text-sm
+            ${selectedVehicle?.id === v.id
+              ? "bg-blue-600 text-white border-blue-600"
+              // ↑ المركبة المختارة تتلوّن
+              : "bg-white hover:bg-blue-50 border-gray-200"
+            }
+          `}
+        >
+          <p className="font-medium">
+            {v.brand} {v.model} — {v.year_created}
           </p>
-        </div>
-      )}
-      
+          <p className="text-xs opacity-70">{v.plate_number}</p>
+        </button>
+      ))}
+
+    </div>
+
+    {/* زر إلغاء الاختيار */}
+    <button
+      type="button"
+      onClick={() => {
+        setSelectedCustomer(null)
+        setSelectedVehicle(null)
+        setSearchQuery("")
+      }}
+      className="text-xs text-gray-400 hover:text-gray-600"
+    >
+      ✕ إلغاء الاختيار
+    </button>
+
+  </div>
+)}
+
       <div className="border-b pb-4">
         <h1 className="text-2xl font-bold text-gray-800">استقبال مركبة جديدة</h1>
         <p className="text-sm text-gray-500 mt-1">تسجيل بيانات العميل وسيارته في النظام دفعة واحدة.</p>

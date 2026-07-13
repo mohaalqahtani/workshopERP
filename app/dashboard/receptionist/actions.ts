@@ -92,3 +92,35 @@ export async function createCustomerWithVehicle(formData: {
     return { success: false, error: error.message || "حدث خطأ غير متوقع" }
   }
 }
+
+// نشئ Job Card لمركبة موجودة مباشرة
+export async function createJobCardForExistingVehicle(vehicleId: number) {
+  try {
+    const technicians = await prisma.user.findMany({
+      where: { role: "TECHNICIAN" },
+      select: { id: true }
+    })
+
+    if (technicians.length === 0) {
+      return { success: false, error: "لا يوجد فنيون مسجلون" }
+    }
+
+    const randomIndex       = Math.floor(Math.random() * technicians.length)
+    const assignedTechnician = technicians[randomIndex]
+
+    const jobCard = await prisma.Job_Cards.create({
+      data: {
+        vehicle_id:    vehicleId,
+        technician_id: assignedTechnician.id,
+      }
+    })
+
+    revalidatePath("/dashboard/receptionist")
+    revalidatePath("/dashboard/technician/job-cards")
+
+    return { success: true, data: { jobCard } }
+
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}

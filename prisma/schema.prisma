@@ -126,7 +126,7 @@ model Parts_Inventory{
   id Int @id @default(autoincrement())
   name String
   stock_qty Int
-  base_price Decimal
+  base_price Int
   compatible_cars String[]
   image_url String
 

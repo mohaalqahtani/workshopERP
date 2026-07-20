@@ -10,6 +10,8 @@ import StatusButton from "../../_components/status-button"
 import AddpartsID from "../../_components/AddPartsDialog"
 import AddServIDDialog from "../../_components/AddServID"
 import DeleteServiceButton from "../../_components/DeleteServices"
+import DeletePartButton from "../../_components/DeletePart"
+import UploadPhoto from "../../_components/upload-photo"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -91,16 +93,19 @@ export default async function JobCardDetailPage({ params }: Props) {
           <p className="text-muted-foreground text-sm">لم تُضف قطع بعد</p>
         ) : (
             <table className="space-y-1 border-collapse border border-gray-400">
+              <thead>
             <tr>
                 <th className="border border-gray-300">اسم القطعة</th>
                 <th className="border border-gray-300">سعر القطعة</th>
                 <th className="border border-gray-300">الاجمالي</th>
             </tr>
+            </thead>
             {jobCard.jobcardsparts.map((part) => (      
             <tbody key={part.id} >
                 <td className="border border-gray-300">{part.partId.name} × {part.quantity}</td>
                 <td className="border border-gray-300">{part.sold_price.toString()} ر.س</td>
                 <td className="border border-gray-300">{Number(part.sold_price) * part.quantity} ر.س</td>
+                <DeletePartButton job_card_id={jobCard.id} part_id={part.id}/>
             </tbody>
             ))}
           </table>
@@ -129,16 +134,26 @@ export default async function JobCardDetailPage({ params }: Props) {
         <AddServIDDialog jobCardId={jobCard.id} availableServices={availableServices}/>
       </section>
 
-      {/* ── صور الفحص ── */}
-      <section className="p-4 border rounded-lg space-y-2">
-        <h2 className="font-semibold text-lg">📷 صور الفحص</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {jobCard.inspectionphotos.map((photo) => (
-            <img key={photo.id} src={photo.photo_Url} className="rounded-lg w-full h-32 object-cover" />
-          ))}
-        </div>
-        {/* هنا ستضيف لاحقاً: <UploadPhotoButton jobCardId={jobCard.id} /> */}
-      </section>
+<section className="p-4 border rounded-lg space-y-2">
+  <h2 className="font-semibold text-lg">📷 صور الفحص</h2>
+
+  {/* عرض الصور الموجودة */}
+  <div className="grid grid-cols-2 gap-2">
+    {jobCard.inspectionphotos.map((photo) => (
+      <img
+        key={photo.id}
+        src={photo.photo_Url}
+        className="rounded-lg w-full h-32 object-cover"
+      />
+    ))}
+  </div>
+
+  {/* مكوّن الرفع */}
+  <UploadPhoto
+    jobCardId={jobCard.id}
+    technicianId={session?.user.id ?? ""}
+  />
+</section>
 
     </div>
   )

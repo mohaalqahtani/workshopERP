@@ -138,7 +138,7 @@ model Services_List{
   name String
   description String
   required_mechanics Int
-  price Decimal
+  price Int
 
   jobcardservices Job_Card_Services[]
 }
@@ -157,7 +157,7 @@ model Job_Cards{
   createdAt DateTime @default(now())
 
   status Job_Cards_Status @default(Registered)
-  total_price Decimal @default(0.0)
+  total_price Int @default(0)
   isDeleted Boolean @default(false)
 
   technician_id String
@@ -179,7 +179,7 @@ model Job_Card_Parts{
   partId Parts_Inventory @relation(fields: [part_id], references: [id])
 
   quantity Int
-  sold_price Decimal
+  sold_price Int
 }
 
 model Job_Card_Services{

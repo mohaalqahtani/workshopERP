@@ -45,6 +45,35 @@ export async function addServToJobCard(data: {
   revalidatePath(`/dashboard/technician/job-cards/${data.jobCardId}`)
 }
 
+
+export async function removePart({
+  job_card_id,
+  part_id,
+}: {
+  job_card_id: number
+  part_id: number
+}) {
+  const part = await prisma.job_Card_Parts.findUnique({
+    where: {
+      id: part_id,
+    },
+  })
+
+  if (!part)
+    throw new Error("الخدمة غير موجودة")
+
+  if (part.job_card_id !== job_card_id)
+    throw new Error("طلب غير صالح")
+
+  await prisma.job_Card_Parts.delete({
+    where: {
+      id: part_id,
+    },
+  })
+  revalidatePath(`/dashboard/technician/job-cards/${job_card_id}`) 
+}
+
+
 export async function removeService({
   service_id,
   job_card_id,
@@ -72,4 +101,19 @@ export async function removeService({
   })
 
   revalidatePath(`/dashboard/technician/job-cards/${job_card_id}`)
+}
+
+export async function saveInspectionPhoto(data: {
+  jobCardId: number
+  photoUrl: string
+  uploadedBy: string
+}) {
+  await prisma.inspection_Photos.create({
+    data: {
+      job_card_id: data.jobCardId,
+      photo_Url:   data.photoUrl,
+      uploaded_by: data.uploadedBy,
+    }
+  })
+  revalidatePath(`/dashboard/technician/job-cards/${data.jobCardId}`)
 }

@@ -46,14 +46,14 @@ export function NavMain({
         </SidebarMenu>
         <SidebarMenu>
           {items.map((item) => (
-            <Link key={item.title} href={item.url}>
             <SidebarMenuItem key={item.title}>
+              <Link href={item.url}>
               <SidebarMenuButton tooltip={item.title}>
                 {item.icon}
                 <span>{item.title}</span>
               </SidebarMenuButton>
-            </SidebarMenuItem>
             </Link>
+            </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

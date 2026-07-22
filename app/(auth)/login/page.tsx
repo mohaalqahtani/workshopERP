@@ -6,15 +6,17 @@ import { useRouter } from "next/navigation"
 
 // ── إحداثيات الورشة ──────────────────────────
 // غيّرها لإحداثيات الورشة الحقيقية
-const WORKSHOP_LAT = process.env.WORKSHOP_LAT  // خط العرض
-const WORKSHOP_LNG = process.env.WORKSHOP_LNG  // خط الطول
+const WORKSHOP_LAT = process.env.WORKSHOP_LAT // خط العرض
+const WORKSHOP_LNG = process.env.WORKSHOP_LNG // خط الطول
 const MAX_DISTANCE_METERS = 200
 // ↑ نسمح للمستخدم يكون في دائرة 200 متر حول الورشة
 
 // ── دالة حساب المسافة بين نقطتين ─────────────
 function getDistanceInMeters(
-  lat1: number, lng1: number,
-  lat2: number, lng2: number
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
 ): number {
   const R = 6371000
   // ↑ نصف قطر الأرض بالأمتار
@@ -27,9 +29,7 @@ function getDistanceInMeters(
 
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) *
-    Math.cos(toRad(lat2)) *
-    Math.sin(dLng / 2) ** 2
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
@@ -64,6 +64,7 @@ function getCurrentLocation(): Promise<GeolocationCoordinates> {
             break
           case err.TIMEOUT:
             reject(new Error("انتهت مهلة تحديد الموقع — حاول مجدداً"))
+            console.log(err)
             break
           default:
             reject(new Error("حدث خطأ أثناء تحديد الموقع"))
@@ -86,11 +87,11 @@ function getCurrentLocation(): Promise<GeolocationCoordinates> {
 export default function LoginPage() {
   const router = useRouter()
 
-  const [email, setEmail]       = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError]       = useState("")
-  const [loading, setLoading]   = useState(false)
-  const [step, setStep]         = useState<"idle" | "location" | "login">("idle")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState<"idle" | "location" | "login">("idle")
   // ↑ step يتتبع في أي مرحلة نحن:
   // idle     = بداية، لم يضغط بعد
   // location = جاري التحقق من الموقع
@@ -102,31 +103,30 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-
       // ── المرحلة 1: جلب الموقع ──────────────
-      setStep("location")
-      // ↑ نحدّث الـ UI: "جاري التحقق من موقعك..."
+      // setStep("location")
+      // // ↑ نحدّث الـ UI: "جاري التحقق من موقعك..."
 
-      const coords = await getCurrentLocation()
-      // ↑ ننتظر المستخدم يقبل إذن الموقع
-      // لو رفض → getCurrentLocation يطلع error → يذهب لـ catch
+      // const coords = await getCurrentLocation()
+      // // ↑ ننتظر المستخدم يقبل إذن الموقع
+      // // لو رفض → getCurrentLocation يطلع error → يذهب لـ catch
 
-      // ── المرحلة 2: التحقق من المسافة ────────
-      const distance = getDistanceInMeters(
-        coords.latitude,
-        coords.longitude,
-        WORKSHOP_LAT,
-        WORKSHOP_LNG
-      )
-      // ↑ نحسب المسافة بين موقع المستخدم وموقع الورشة
+      // // ── المرحلة 2: التحقق من المسافة ────────
+      // const distance = getDistanceInMeters(
+      //   coords.latitude,
+      //   coords.longitude,
+      //   WORKSHOP_LAT,
+      //   WORKSHOP_LNG
+      // )
+      // // ↑ نحسب المسافة بين موقع المستخدم وموقع الورشة
 
-      if (distance > MAX_DISTANCE_METERS) {
-        // ↑ لو بعيد أكثر من 200 متر
-        throw new Error(
-          `أنت خارج نطاق الورشة — المسافة: ${Math.round(distance)} متر`
-        )
-      }
-      // لو داخل النطاق → يكمل للخطوة التالية
+      // if (distance > MAX_DISTANCE_METERS) {
+      //   // ↑ لو بعيد أكثر من 200 متر
+      //   throw new Error(
+      //     `أنت خارج نطاق الورشة — المسافة: ${Math.round(distance)} متر`
+      //   )
+      // }
+      // // لو داخل النطاق → يكمل للخطوة التالية
 
       // ── المرحلة 3: تسجيل الدخول ─────────────
       setStep("login")
@@ -144,7 +144,6 @@ export default function LoginPage() {
 
       router.push("/dashboard")
       // ↑ نجح كل شيء → توجيه للداشبورد
-
     } catch (err: any) {
       setError(err.message)
       // ↑ أي خطأ في أي مرحلة يصل هنا
@@ -158,20 +157,21 @@ export default function LoginPage() {
   // ── رسالة التحميل حسب المرحلة ───────────────
   function getLoadingText() {
     switch (step) {
-      case "location": return "جاري التحقق من موقعك..."
-      case "login":    return "جاري تسجيل الدخول..."
-      default:         return "تسجيل الدخول"
+      case "location":
+        return "جاري التحقق من موقعك..."
+      case "login":
+        return "جاري تسجيل الدخول..."
+      default:
+        return "تسجيل الدخول"
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
-
-        <h1 className="text-2xl font-bold text-center">تسجيل الدخول</h1>
+        <h1 className="text-center text-2xl font-bold">تسجيل الدخول</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <input
             type="email"
             placeholder="البريد الإلكتروني"
@@ -179,7 +179,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
-            className="w-full p-2 border rounded-lg"
+            className="w-full rounded-lg border p-2"
           />
 
           <input
@@ -189,30 +189,27 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={loading}
-            className="w-full p-2 border rounded-lg"
+            className="w-full rounded-lg border p-2"
           />
 
           {/* رسالة الخطأ */}
-          {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
+          {error && <p className="text-center text-sm text-red-500">{error}</p>}
 
           {/* مؤشر المرحلة */}
           {loading && (
             <div className="text-center text-sm text-muted-foreground">
               {step === "location" && "📍 جاري التحقق من موقعك..."}
-              {step === "login"    && "🔐 جاري تسجيل الدخول..."}
+              {step === "login" && "🔐 جاري تسجيل الدخول..."}
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full p-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-600 p-2 text-white disabled:opacity-50"
           >
             {loading ? getLoadingText() : "تسجيل الدخول"}
           </button>
-
         </form>
       </div>
     </div>

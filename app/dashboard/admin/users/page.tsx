@@ -2,12 +2,14 @@ import "./style.css"
 import prisma from "@/lib/prisma"
 import DeleteUsers from "./_components/deleteUsers"
 import UpdateUsers from "./_components/updateUsers"
+import AddUsers from "./_components/addUsers"
 
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany()
 
   return (
     <table>
+      <AddUsers />
       <thead>
         <tr>
           <th>الاسم</th>

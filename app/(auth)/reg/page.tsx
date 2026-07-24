@@ -5,64 +5,63 @@ import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
-    const router = useRouter()
+  const router = useRouter()
 
-    const [email, setEmail]       = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError]       = useState("")
-    const [loading, setLoading]   = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-    // ✅ التنفيذ فقط عند الضغط على الزر
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setLoading(true)
-        setError("")
+  // ✅ التنفيذ فقط عند الضغط على الزر
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
 
-        const { data, error } = await authClient.signUp.email({
-            email,
-            password,
-            name: "mohammed",
-            callbackURL: "/dashboard",
-        })
+    const { data, error } = await authClient.signUp.email({
+      email,
+      password,
+      name: "mohammed",
+      callbackURL: "/dashboard",
+    })
 
-        setLoading(false)
+    setLoading(false)
 
-        if (error) {
-            setError(error.message ?? "حدث خطأ أثناء تسجيل الدخول")
-            return
-        }
-
-        router.push("/dashboard")
+    if (error) {
+      setError(error.message ?? "حدث خطأ أثناء تسجيل الدخول")
+      return
     }
 
-    return (
-        <div>
-            <h1>Reg Page</h1>
+    router.push("/dashboard")
+  }
 
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
+  return (
+    <div>
+      <h1>Reg Page</h1>
 
-                <input
-                    type="password"
-                    placeholder="كلمة المرور"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="البريد الإلكتروني"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-                {/* ✅ عرض الخطأ للمستخدم */}
-                {error && <p style={{ color: "red" }}>{error}</p>}
+        <input
+          type="password"
+          placeholder="كلمة المرور"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        {/* ✅ عرض الخطأ للمستخدم */}
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
-                <button type="submit" disabled={loading}>
-                    {loading ? "جاري التحميل..." : "تسجيل الدخول"}
-                </button>
-            </form>
-        </div>
-    )
+        <button type="submit" disabled={loading}>
+          {loading ? "جاري التحميل..." : "تسجيل الدخول"}
+        </button>
+      </form>
+    </div>
+  )
 }

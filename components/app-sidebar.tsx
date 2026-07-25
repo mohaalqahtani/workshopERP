@@ -15,7 +15,24 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import {
+  LayoutDashboardIcon,
+  ListIcon,
+  ChartBarIcon,
+  FolderIcon,
+  UsersIcon,
+  CameraIcon,
+  FileTextIcon,
+  Settings2Icon,
+  CircleHelpIcon,
+  SearchIcon,
+  DatabaseIcon,
+  FileChartColumnIcon,
+  FileIcon,
+  CommandIcon,
+  Cog,
+  Toolbox,
+} from "lucide-react"
 
 const data = {
   user: {
@@ -25,53 +42,35 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon
-        />
-      ),
+      title: "Inventory",
+      url: "/dashboard/admin/inventory",
+      icon: <Toolbox />,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: (
-        <ListIcon
-        />
-      ),
+      title: "Services",
+      url: "/dashboard/admin/services",
+      icon: <Cog />,
     },
     {
       title: "Analytics",
       url: "#",
-      icon: (
-        <ChartBarIcon
-        />
-      ),
+      icon: <ChartBarIcon />,
     },
     {
       title: "Projects",
       url: "#",
-      icon: (
-        <FolderIcon
-        />
-      ),
+      icon: <FolderIcon />,
     },
     {
       title: "Team",
       url: "/dashboard/admin/users",
-      icon: (
-        <UsersIcon
-        />
-      ),
+      icon: <UsersIcon />,
     },
   ],
   navClouds: [
     {
       title: "Capture",
-      icon: (
-        <CameraIcon
-        />
-      ),
+      icon: <CameraIcon />,
       isActive: true,
       url: "#",
       items: [
@@ -87,10 +86,7 @@ const data = {
     },
     {
       title: "Proposal",
-      icon: (
-        <FileTextIcon
-        />
-      ),
+      icon: <FileTextIcon />,
       url: "#",
       items: [
         {
@@ -105,10 +101,7 @@ const data = {
     },
     {
       title: "Prompts",
-      icon: (
-        <FileTextIcon
-        />
-      ),
+      icon: <FileTextIcon />,
       url: "#",
       items: [
         {
@@ -126,52 +119,34 @@ const data = {
     {
       title: "Settings",
       url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
+      icon: <Settings2Icon />,
     },
     {
       title: "Get Help",
       url: "#",
-      icon: (
-        <CircleHelpIcon
-        />
-      ),
+      icon: <CircleHelpIcon />,
     },
     {
       title: "Search",
       url: "#",
-      icon: (
-        <SearchIcon
-        />
-      ),
+      icon: <SearchIcon />,
     },
   ],
   documents: [
     {
       name: "Data Library",
       url: "#",
-      icon: (
-        <DatabaseIcon
-        />
-      ),
+      icon: <DatabaseIcon />,
     },
     {
       name: "Reports",
       url: "#",
-      icon: (
-        <FileChartColumnIcon
-        />
-      ),
+      icon: <FileChartColumnIcon />,
     },
     {
       name: "Word Assistant",
       url: "#",
-      icon: (
-        <FileIcon
-        />
-      ),
+      icon: <FileIcon />,
     },
   ],
 }

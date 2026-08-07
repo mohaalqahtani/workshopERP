@@ -10,7 +10,7 @@ type Props = {
 
 export default function UploadPhoto({ jobCardId, technicianId }: Props) {
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview]     = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -24,26 +24,31 @@ export default function UploadPhoto({ jobCardId, technicianId }: Props) {
       // 2️⃣ رفع الصورة لـ Cloudinary مباشرة من المتصفح
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
-      // ↑ NEXT_PUBLIC = يظهر في المتصفح (مقصود لأن الرفع من المتصفح)
+      formData.append("jobCardId", String(jobCardId))
+      formData.append("technicianId", technicianId)
+      // formData.append(
+      //   "upload_preset",
+      //   process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+      // )
+      // // ↑ NEXT_PUBLIC = يظهر في المتصفح (مقصود لأن الرفع من المتصفح)
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData }
-      )
+      // const response = await fetch(
+      //   `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      //   { method: "POST", body: formData }
+      // )
 
-      const data = await response.json()
-      const photoUrl = data.secure_url
-      // ↑ الرابط الدائم للصورة
-      // مثال: https://res.cloudinary.com/mycloud/image/upload/v123/photo.jpg
+      // const data = await response.json()
+      // const photoUrl = data.secure_url
+      // // ↑ الرابط الدائم للصورة
+      // // مثال: https://res.cloudinary.com/mycloud/image/upload/v123/photo.jpg
 
       // 3️⃣ حفظ الرابط في DB
-      await saveInspectionPhoto({
-        jobCardId,
-        photoUrl,
-        uploadedBy: technicianId,
-      })
-
+      // await saveInspectionPhoto({
+      //   jobCardId,
+      //   photoUrl,
+      //   uploadedBy: technicianId,
+      // })
+      await saveInspectionPhoto(formData)
     } catch (error) {
       console.error("فشل رفع الصورة:", error)
     } finally {
@@ -53,14 +58,10 @@ export default function UploadPhoto({ jobCardId, technicianId }: Props) {
 
   return (
     <div className="space-y-3">
-
       {/* زر الاختيار */}
-      <label className={`
-        flex items-center justify-center gap-2
-        p-3 border-2 border-dashed rounded-lg cursor-pointer
-        hover:bg-muted transition text-sm
-        ${uploading ? "opacity-50 cursor-not-allowed" : ""}
-      `}>
+      <label
+        className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed p-3 text-sm transition hover:bg-muted ${uploading ? "cursor-not-allowed opacity-50" : ""} `}
+      >
         <input
           type="file"
           accept="image/*"
@@ -78,10 +79,9 @@ export default function UploadPhoto({ jobCardId, technicianId }: Props) {
         <img
           src={preview}
           alt="معاينة"
-          className="w-full h-40 object-cover rounded-lg"
+          className="h-40 w-full rounded-lg object-cover"
         />
       )}
-
     </div>
   )
 }

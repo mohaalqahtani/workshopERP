@@ -24,137 +24,149 @@ export default async function JobCardDetailPage({ params }: Props) {
 
   // جيب البطاقة بكل تفاصيلها
   const [jobCard, availableParts, availableServices] = await Promise.all([
-  prisma.Job_Cards.findUnique({  
-  where: {
-      id: parseInt(id),
-      technician_id: session?.user.id,
-      // ↑ أمان إضافي: لو حاول فني يفتح بطاقة مش له
-    },
-    include: {
-      vehicles: {
-        include: { customer: true }
+    prisma.Job_Cards.findUnique({
+      where: {
+        id: parseInt(id),
+        technician_id: session?.user.id,
+        // ↑ أمان إضافي: لو حاول فني يفتح بطاقة مش له
       },
-      jobcardsparts: {
-        include: { partId: true }
-        // ↑ القطع المضافة + بيانات كل قطعة
+      include: {
+        vehicles: {
+          include: { customer: true },
+        },
+        jobcardsparts: {
+          include: { partId: true },
+          // ↑ القطع المضافة + بيانات كل قطعة
+        },
+        jobcardservices: {
+          include: { serviceId: true },
+          // ↑ الخدمات المضافة + بيانات كل خدمة
+        },
+        inspectionphotos: true,
       },
-      jobcardservices: {
-        include: { serviceId: true }
-        // ↑ الخدمات المضافة + بيانات كل خدمة
-      },
-      inspectionphotos: true
-    }
-  }),
+    }),
 
-  prisma.parts_Inventory.findMany({
-    select:{
+    prisma.parts_Inventory.findMany({
+      select: {
         id: true,
         name: true,
         base_price: true,
         stock_qty: true,
-    }
-  }),
+      },
+    }),
 
-  prisma.services_List.findMany({
-    select:{
-      id: true,
-      name: true,
-      description: true,
-      required_mechanics: true,
-      price: true
-    }
-  })
-
-])
+    prisma.services_List.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        required_mechanics: true,
+        price: true,
+      },
+    }),
+  ])
   // لو ما لقى البطاقة أو مش له → صفحة 404
   if (!jobCard) return notFound()
   return (
-    <div className="p-6 space-y-6" dir="rtl">
-
+    <div className="space-y-6 p-6" dir="rtl">
       {/* ── رأس الصفحة ── */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">بطاقة عمل #{jobCard.id}</h1>
         <StatusButton jobCardId={jobCard.id} currentStatus={jobCard.status} />
       </div>
 
       {/* ── بيانات المركبة والزبون ── */}
-      <section className="p-4 border rounded-lg space-y-2">
-        <h2 className="font-semibold text-lg">🚗 المركبة والزبون</h2>
-        <p>{jobCard.vehicles.brand} {jobCard.vehicles.model} — {jobCard.vehicles.year_created}</p>
+      <section className="space-y-2 rounded-lg border p-4">
+        <h2 className="text-lg font-semibold">🚗 المركبة والزبون</h2>
+        <p>
+          {jobCard.vehicles.brand} {jobCard.vehicles.model} —{" "}
+          {jobCard.vehicles.year_created}
+        </p>
         <p>اللوحة: {jobCard.vehicles.plate_number}</p>
         <p>الزبون: {jobCard.vehicles.customer.name}</p>
         <p>الجوال: {jobCard.vehicles.customer.phone}</p>
       </section>
 
       {/* ── القطع المستخدمة ── */}
-      <section className="p-4 border rounded-lg space-y-2">
-        <h2 className="font-semibold text-lg">🔧 القطع المستخدمة</h2>
+      <section className="space-y-2 rounded-lg border p-4">
+        <h2 className="text-lg font-semibold">🔧 القطع المستخدمة</h2>
         {jobCard.jobcardsparts.length === 0 ? (
-          <p className="text-muted-foreground text-sm">لم تُضف قطع بعد</p>
+          <p className="text-sm text-muted-foreground">لم تُضف قطع بعد</p>
         ) : (
-            <table className="space-y-1 border-collapse border border-gray-400">
-              <thead>
-            <tr>
+          <table className="border-collapse space-y-1 border border-gray-400">
+            <thead>
+              <tr>
                 <th className="border border-gray-300">اسم القطعة</th>
                 <th className="border border-gray-300">سعر القطعة</th>
                 <th className="border border-gray-300">الاجمالي</th>
-            </tr>
+              </tr>
             </thead>
-            {jobCard.jobcardsparts.map((part) => (      
-            <tbody key={part.id} >
-                <td className="border border-gray-300">{part.partId.name} × {part.quantity}</td>
-                <td className="border border-gray-300">{part.sold_price.toString()} ر.س</td>
-                <td className="border border-gray-300">{Number(part.sold_price) * part.quantity} ر.س</td>
-                <DeletePartButton job_card_id={jobCard.id} part_id={part.id}/>
-            </tbody>
+            {jobCard.jobcardsparts.map((part) => (
+              <tbody key={part.id}>
+                <td className="border border-gray-300">
+                  {part.partId.name} × {part.quantity}
+                </td>
+                <td className="border border-gray-300">
+                  {part.sold_price.toString()} ر.س
+                </td>
+                <td className="border border-gray-300">
+                  {Number(part.sold_price) * part.quantity} ر.س
+                </td>
+                <DeletePartButton job_card_id={jobCard.id} part_id={part.id} />
+              </tbody>
             ))}
           </table>
         )}
         {/* هنا ستضيف لاحقاً: <AddPartForm jobCardId={jobCard.id} /> */}
-    <AddpartsID jobCardId={jobCard.id} availableParts={availableParts}/>
+        <AddpartsID jobCardId={jobCard.id} availableParts={availableParts} />
       </section>
 
       {/* ── الخدمات ── */}
-      <section className="p-4 border rounded-lg space-y-2">
-        <h2 className="font-semibold text-lg">⚙️ الخدمات المنفذة</h2>
+      <section className="space-y-2 rounded-lg border p-4">
+        <h2 className="text-lg font-semibold">⚙️ الخدمات المنفذة</h2>
         {jobCard.jobcardservices.length === 0 ? (
-          <p className="text-muted-foreground text-sm">لم تُضف خدمات بعد</p>
+          <p className="text-sm text-muted-foreground">لم تُضف خدمات بعد</p>
         ) : (
           <ul className="space-y-1">
             {jobCard.jobcardservices.map((service) => (
-              <li key={service.id} className="text-sm flex justify-between">
+              <li key={service.id} className="flex justify-between text-sm">
                 <span>{service.serviceId.name}</span>
                 <span>{service.serviceId.price.toString()} ر.س</span>
-                <DeleteServiceButton job_card_id={jobCard.id} service_id={service.id}/>
+                <DeleteServiceButton
+                  job_card_id={jobCard.id}
+                  service_id={service.id}
+                />
               </li>
             ))}
           </ul>
         )}
         {/* هنا ستضيف لاحقاً: <AddServiceForm jobCardId={jobCard.id} /> */}
-        <AddServIDDialog jobCardId={jobCard.id} availableServices={availableServices}/>
+        <AddServIDDialog
+          jobCardId={jobCard.id}
+          availableServices={availableServices}
+        />
       </section>
 
-<section className="p-4 border rounded-lg space-y-2">
-  <h2 className="font-semibold text-lg">📷 صور الفحص</h2>
+      <section className="space-y-2 rounded-lg border p-4">
+        <h2 className="text-lg font-semibold">📷 صور الفحص</h2>
 
-  {/* عرض الصور الموجودة */}
-  <div className="grid grid-cols-2 gap-2">
-    {jobCard.inspectionphotos.map((photo) => (
-      <img
-        key={photo.id}
-        src={photo.photo_Url}
-        className="rounded-lg w-full h-32 object-cover"
-      />
-    ))}
-  </div>
+        {/* عرض الصور الموجودة */}
+        <div className="grid grid-cols-2 gap-2">
+          {jobCard.inspectionphotos.map((photo) => (
+            <img
+              key={photo.id}
+              src={`/api/inspection-images/${photo.id}`}
+              className="h-32 w-full rounded-lg object-cover"
+            />
+          ))}
+        </div>
 
-  {/* مكوّن الرفع */}
-  <UploadPhoto
-    jobCardId={jobCard.id}
-    technicianId={session?.user.id ?? ""}
-  />
-</section>
-
+        {/* مكوّن الرفع */}
+        <UploadPhoto
+          jobCardId={jobCard.id}
+          technicianId={session?.user.id ?? ""}
+        />
+      </section>
     </div>
   )
 }

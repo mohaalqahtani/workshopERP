@@ -3,6 +3,9 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { Job_Cards_Status } from "@/lib/generated/prisma"
 import { logAction } from "@/lib/log-action"
+import { randomUUID } from "crypto"
+import path from "path"
+import { mkdir, writeFile } from "fs/promises"
 
 export async function updateJobCardStatus(
   jobCardId: number,
@@ -131,26 +134,106 @@ export async function removeService({
   revalidatePath(`/dashboard/technician/job-cards/${job_card_id}`)
 }
 
-export async function saveInspectionPhoto(data: {
-  jobCardId: number
-  photoUrl: string
-  uploadedBy: string
-}) {
-  await prisma.inspection_Photos.create({
-    data: {
-      job_card_id: data.jobCardId,
-      photo_Url: data.photoUrl,
-      uploaded_by: data.uploadedBy,
-    },
+// export async function saveInspectionPhoto(data: {
+//   jobCardId: number
+//   photoUrl: string
+//   uploadedBy: string
+// }) {
+//   await prisma.inspection_Photos.create({
+//     data: {
+//       job_card_id: data.jobCardId,
+//       photo_Url: data.photoUrl,
+//       uploaded_by: data.uploadedBy,
+//     },
+//   })
+
+//   // ✅
+//   logAction({
+//     action: "ADD_PHOTO",
+//     entity: "Inspection_Photos",
+//     entity_id: data.jobCardId,
+//     details: { jobCardId: data.jobCardId },
+//   })
+
+//   revalidatePath(`/dashboard/technician/job-cards/${data.jobCardId}`)
+// }
+
+export async function saveInspectionPhoto(formData: FormData) {
+  const file = formData.get("file")
+  const jobCardId = Number(formData.get("jobCardId"))
+  const technicianId = String(formData.get("technicianId"))
+
+  if (!(file instanceof File)) {
+    throw new Error("لم يتم إرسال صورة")
+  }
+  if (!jobCardId || !technicianId) {
+    throw new Error("يوجد نقص بالطلب")
+  }
+
+  // const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
+
+  // if (!allowedTypes.includes(file.type)) {
+  //   throw new Error("نوع الصورة غير مسموح")
+  // }
+
+  const extensionMap: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  }
+
+  const extension = extensionMap[file.type]
+
+  if (!extension) {
+    throw new Error("نوع الصورة غير مدعوم")
+  }
+
+  const MAX_SIZE = 10 * 1024 * 1024
+
+  if (file.size > MAX_SIZE) {
+    throw new Error("حجم الصورة يتجاوز 10MB")
+  }
+
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+
+  const fileName = `${randomUUID()}.${extension}`
+
+  const uploadDir = path.join(
+    process.cwd(),
+    "storage",
+    "inspections",
+    String(jobCardId)
+  )
+
+  await mkdir(uploadDir, {
+    recursive: true,
   })
 
-  // ✅
+  const filePath = path.join(uploadDir, fileName)
+
+  await writeFile(filePath, buffer)
+
+  const relativePath = path.join("inspections", String(jobCardId), fileName)
+
+  const photo = await prisma.inspection_Photos.create({
+    data: {
+      job_card_id: jobCardId,
+      uploaded_by: technicianId,
+      photo_Url: relativePath,
+    },
+  })
   logAction({
     action: "ADD_PHOTO",
     entity: "Inspection_Photos",
-    entity_id: data.jobCardId,
-    details: { jobCardId: data.jobCardId },
+    entity_id: jobCardId,
+    details: { jobCardId: jobCardId },
   })
 
-  revalidatePath(`/dashboard/technician/job-cards/${data.jobCardId}`)
+  revalidatePath(`/dashboard/technician/job-cards/${jobCardId}`)
+  return {
+    success: true,
+    photoId: photo.id,
+    path: relativePath,
+  }
 }

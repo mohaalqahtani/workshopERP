@@ -3,6 +3,32 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { logAction } from "@/lib/log-action"
+import { Job_Cards_Status } from "@/lib/generated/prisma"
+import { error } from "next/dist/build/output/log"
+
+export async function updateJobCardStatus(
+  jobCardId: number,
+  newStatus: Job_Cards_Status
+) {
+  const old = await prisma.Job_Cards.findUnique({
+    where: { id: jobCardId },
+    select: { status: true },
+  })
+
+  await prisma.Job_Cards.update({
+    where: { id: jobCardId },
+    data: { status: newStatus, isDeleted: true },
+  })
+
+  logAction({
+    action: "UPDATE_STATUS",
+    entity: "Job_Cards",
+    entity_id: jobCardId,
+    details: { from: old?.status, to: newStatus },
+  })
+
+  revalidatePath("/dashboard/receptionist")
+}
 
 export async function searchCustomer(query: string) {
   if (!query || query.length < 2) return null
@@ -51,14 +77,56 @@ export async function createCustomerWithVehicle(formData: {
 
       const technicians = await tx.user.findMany({
         where: { role: "TECHNICIAN" },
-        select: { id: true },
+        select: {
+          id: true,
+          _count: {
+            select: {
+              job_cards: {
+                where: {
+                  status: { notIn: ["Closed", "Paid"] },
+                },
+              },
+            },
+          },
+          job_cards: {
+            select: {
+              technician_id: true,
+            },
+          },
+        },
       })
 
-      if (technicians.length === 0)
+      // const checkavatech = await prisma.user.findMany({
+      //   where: { role: "TECHNICIAN" },
+      //   select: {
+      //     id: true,
+      //     _count: {
+      //       select: {
+      //         job_cards: {
+      //           where: {
+      //             status: { notIn: ["Closed", "Paid"] },
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // })
+
+      const AvailbleTechnician = technicians.filter(
+        (t) => t._count.job_cards < 2
+      )
+      if (technicians.length === 0) {
         throw new Error("لا يوجد فنيون مسجلون في النظام")
+      }
+      if (AvailbleTechnician.length === 0) {
+        console.log(AvailbleTechnician)
+        throw new Error("جميع الفنيين مشغولين")
+      }
 
       const assignedTechnician =
-        technicians[Math.floor(Math.random() * technicians.length)]
+        AvailbleTechnician[
+          Math.floor(Math.random() * AvailbleTechnician.length)
+        ]
 
       const jobCard = await tx.Job_Cards.create({
         data: {
@@ -108,7 +176,6 @@ export async function createJobCardForExistingVehicle(vehicleId: number) {
       data: { vehicle_id: vehicleId, technician_id: assignedTechnician.id },
     })
 
-    // ✅
     logAction({
       action: "CREATE_JOB_CARD",
       entity: "Job_Cards",
@@ -123,3 +190,20 @@ export async function createJobCardForExistingVehicle(vehicleId: number) {
     return { success: false, error: error.message }
   }
 }
+
+// const testcommand = await prisma.user.findMany({
+//   where: { role: "TECHNICIAN" },
+//   select: {
+//     id: true,
+//     _count: {
+//       select: {
+//         job_cards: {
+//           where: {
+//             status: { notIn: ["Closed", "Paid"] },
+//           },
+//         },
+//       },
+//     },
+//   },
+// })
+// console.log(testcommand)

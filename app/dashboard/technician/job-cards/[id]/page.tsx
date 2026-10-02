@@ -1,7 +1,3 @@
-// الـ [id] في الاسم = Next.js يعرف إن هذا dynamic route
-// /job-cards/5 → id = "5"
-// /job-cards/12 → id = "12"
-
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
@@ -15,20 +11,17 @@ import UploadPhoto from "../../_components/upload-photo"
 
 type Props = {
   params: Promise<{ id: string }>
-  // ↑ Next.js يمرر الـ id من الـ URL هنا
 }
 
 export default async function JobCardDetailPage({ params }: Props) {
   const { id } = await params
   const session = await auth.api.getSession({ headers: await headers() })
 
-  // جيب البطاقة بكل تفاصيلها
   const [jobCard, availableParts, availableServices] = await Promise.all([
     prisma.Job_Cards.findUnique({
       where: {
         id: parseInt(id),
         technician_id: session?.user.id,
-        // ↑ أمان إضافي: لو حاول فني يفتح بطاقة مش له
       },
       include: {
         vehicles: {
@@ -36,11 +29,9 @@ export default async function JobCardDetailPage({ params }: Props) {
         },
         jobcardsparts: {
           include: { partId: true },
-          // ↑ القطع المضافة + بيانات كل قطعة
         },
         jobcardservices: {
           include: { serviceId: true },
-          // ↑ الخدمات المضافة + بيانات كل خدمة
         },
         inspectionphotos: true,
       },
@@ -65,17 +56,14 @@ export default async function JobCardDetailPage({ params }: Props) {
       },
     }),
   ])
-  // لو ما لقى البطاقة أو مش له → صفحة 404
   if (!jobCard) return notFound()
   return (
     <div className="space-y-6 p-6" dir="rtl">
-      {/* ── رأس الصفحة ── */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">بطاقة عمل #{jobCard.id}</h1>
         <StatusButton jobCardId={jobCard.id} currentStatus={jobCard.status} />
       </div>
 
-      {/* ── بيانات المركبة والزبون ── */}
       <section className="space-y-2 rounded-lg border p-4">
         <h2 className="text-lg font-semibold">🚗 المركبة والزبون</h2>
         <p>
@@ -87,7 +75,6 @@ export default async function JobCardDetailPage({ params }: Props) {
         <p>الجوال: {jobCard.vehicles.customer.phone}</p>
       </section>
 
-      {/* ── القطع المستخدمة ── */}
       <section className="space-y-2 rounded-lg border p-4">
         <h2 className="text-lg font-semibold">🔧 القطع المستخدمة</h2>
         {jobCard.jobcardsparts.length === 0 ? (
@@ -117,11 +104,9 @@ export default async function JobCardDetailPage({ params }: Props) {
             ))}
           </table>
         )}
-        {/* هنا ستضيف لاحقاً: <AddPartForm jobCardId={jobCard.id} /> */}
         <AddpartsID jobCardId={jobCard.id} availableParts={availableParts} />
       </section>
 
-      {/* ── الخدمات ── */}
       <section className="space-y-2 rounded-lg border p-4">
         <h2 className="text-lg font-semibold">⚙️ الخدمات المنفذة</h2>
         {jobCard.jobcardservices.length === 0 ? (
@@ -140,7 +125,6 @@ export default async function JobCardDetailPage({ params }: Props) {
             ))}
           </ul>
         )}
-        {/* هنا ستضيف لاحقاً: <AddServiceForm jobCardId={jobCard.id} /> */}
         <AddServIDDialog
           jobCardId={jobCard.id}
           availableServices={availableServices}
@@ -149,8 +133,6 @@ export default async function JobCardDetailPage({ params }: Props) {
 
       <section className="space-y-2 rounded-lg border p-4">
         <h2 className="text-lg font-semibold">📷 صور الفحص</h2>
-
-        {/* عرض الصور الموجودة */}
         <div className="grid grid-cols-2 gap-2">
           {jobCard.inspectionphotos.map((photo) => (
             <img
@@ -160,8 +142,6 @@ export default async function JobCardDetailPage({ params }: Props) {
             />
           ))}
         </div>
-
-        {/* مكوّن الرفع */}
         <UploadPhoto
           jobCardId={jobCard.id}
           technicianId={session?.user.id ?? ""}

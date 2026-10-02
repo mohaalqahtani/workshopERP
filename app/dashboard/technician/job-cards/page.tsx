@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import Link from "next/link"
 
-// ألوان الحالات للعرض
 const statusConfig = {
   Registered:    { label: "مسجلة",        color: "bg-gray-100 text-gray-700" },
   In_Inspection: { label: "قيد الفحص",    color: "bg-yellow-100 text-yellow-700" },
@@ -16,30 +15,25 @@ const statusConfig = {
 
 export default async function TechnicianJobCardsPage() {
 
-  // 1️⃣ جيب السيشن لنعرف مين الفني الحالي
   const session = await auth.api.getSession({
     headers: await headers()
   })
 
   if (!session) return <p>غير مصرح</p>
 
-  // 2️⃣ جيب فقط البطاقات المخصصة لهذا الفني
   const jobCards = await prisma.Job_Cards.findMany({
     where: {
       technician_id: session.user.id,
-      // ↑ هذا هو الفلتر الأساسي — فقط بطاقاتي
       isDeleted: false,
     },
     include: {
       vehicles: {
         include: {
           customer: true
-          // ↑ نجيب بيانات الزبون مع المركبة
         }
       }
     },
     orderBy: { createdAt: "desc" }
-    // ↑ الأحدث أولاً
   })
 
   return (
@@ -59,18 +53,12 @@ export default async function TechnicianJobCardsPage() {
             const status = statusConfig[card.status]
             return (
               <li key={card.id}>
-                {/*
-                  Link يوجّه للصفحة التفصيلية
-                  /dashboard/technician/job-cards/5
-                  ↑ رقم البطاقة يصير في الـ URL
-                */}
                 <Link
                   href={`/dashboard/technician/job-cards/${card.id}`}
                   className="block p-4 border rounded-lg hover:bg-muted transition"
                 >
                   <div className="flex justify-between items-start">
 
-                    {/* بيانات المركبة والزبون */}
                     <div>
                       <p className="font-bold">
                         🚗 {card.vehicles.brand} {card.vehicles.model}
@@ -85,8 +73,6 @@ export default async function TechnicianJobCardsPage() {
                         بطاقة #{card.id} — {card.createdAt.toLocaleDateString("ar-SA")}
                       </p>
                     </div>
-
-                    {/* الحالة */}
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${status.color}`}>
                       {status.label}
                     </span>

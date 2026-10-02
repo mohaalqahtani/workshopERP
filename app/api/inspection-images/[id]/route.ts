@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { readFile } from "fs/promises"
 import path from "path"
-
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
 export async function GET(
@@ -12,6 +13,13 @@ export async function GET(
     params: Promise<{ id: string }>
   }
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+  if (!session)
+    return new NextResponse("غير مصرح", {
+      status: 403,
+    })
   const { id } = await params
 
   const photo = await prisma.inspection_Photos.findUnique({

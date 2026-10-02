@@ -21,7 +21,6 @@ export async function updateJobCardStatus(
     data: { status: newStatus },
   })
 
-  // ✅
   logAction({
     action: "UPDATE_STATUS",
     entity: "Job_Cards",

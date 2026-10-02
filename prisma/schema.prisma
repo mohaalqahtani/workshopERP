@@ -214,3 +214,8 @@ model Inspection_Photos{
 
   createdAt DateTime @default(now())
 }
+
+model Wait_List{
+  id Int @id @default(autoincrement())
+  
+}
